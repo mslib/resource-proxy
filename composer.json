@@ -1,0 +1,19 @@
+{
+    "name": "mslib/resource-proxy",
+    "description": "General Ms library to get resources from a remote source (e.g. email box)",
+    "license": "GLP v2",
+    "authors": [
+        {
+            "name": "Marco Spallanzani",
+            "email": "mslib.code@gmail.com"
+        }
+    ],
+    "require": {
+        "zendframework/zend-mail": "2.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Msl\\" : ""
+        }
+    }
+}
