@@ -23,7 +23,7 @@ class SourceConfig
      * Source Type Constants
      */
     const SOURCE_TYPE_IMAP      = 'imap';
-    const SOURCE_TYPE_CURL      = 'curl';
+    const SOURCE_TYPE_POP       = 'pop';
     const SOURCE_CRYPT_PROTOCOL = 'crypt';
 
     /**

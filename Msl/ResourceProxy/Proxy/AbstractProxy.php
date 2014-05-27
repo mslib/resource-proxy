@@ -239,6 +239,7 @@ abstract class AbstractProxy
                     // Launching the post parse unit action for the current resource object
                     $source->postParseUnitAction($resourceKey, $success);
                 } catch (\Exception $e) {
+//TODO save the exception in an array and return/launch a unique exception with all the post parse unit exception
                     throw new Exception\PostParseUnitException(
                         sprintf(
                             "The following exception has been caught after having parsed the source object '%s'. Error is: %s",
@@ -253,8 +254,10 @@ abstract class AbstractProxy
             // Running the global post parse action for the current source object
             $source->postParseGlobalAction($globalSuccess);
         } catch (\Exception $e) {
-
+//TODO save the exception in an array and return/launch a unique exception with all the post parse unit exception
+            ;
         }
+//TODO launch a unique exception with all the post parse unit and post global errors
     }
 
     public function processResourcesBySourceName($sourceName)

@@ -49,6 +49,10 @@ class SourceFactory
                     // Initializing an Imap Source object
                     $sourceObj = new Imap();
                     break;
+                case SourceConfig::SOURCE_TYPE_POP:
+                    // Initializing a Pop Source object
+                    $sourceObj = new Pop();
+                    break;
                 default:
                     throw new Exception\BadSourceConfigConfigurationException(
                         sprintf(
