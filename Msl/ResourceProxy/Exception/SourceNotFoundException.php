@@ -11,53 +11,53 @@
 namespace Msl\ResourceProxy\Exception;
 
 /**
- * Exception thrown when an error occurs after having parsed a given set of resources
+ * Exception thrown when it was not possible to find a SourceInterface instance for a given name
  *
  * @category  Exception
  * @package   Msl\ResourceProxy\Exception
  * @author    "Marco Spallanzani" <mslib.code@gmail.com>
  */
-class PostParseException extends \Exception implements ResourceProxyExceptionInterface
+class SourceNotFoundException extends \Exception implements ResourceProxyExceptionInterface
 {
     /**
-     * Error array
+     * The source name
      *
-     * @var array
+     * @var string
      */
-    protected $errors = array();
+    protected $sourceName;
 
     /**
      * Class Constructor
      *
-     * @param array         $errors     the error messages array
+     * @param array         $sourceName the source name
      * @param string        $message    the message for this exception
      * @param int           $code       the code for this exception
      * @param \Exception    $previous   the previous exception object
      */
-    public function __construct(array $errors = array(), $message = "", $code = 0, \Exception $previous = null)
+    public function __construct($sourceName, $message = "", $code = 0, \Exception $previous = null)
     {
         // Setting object fields
         parent::__construct($message, $code, $previous);
-        $this->errors = $errors;
+        $this->sourceName = $sourceName;
     }
 
     /**
-     * Sets the error array
+     * Sets the not found source name
      *
-     * @param array $errors
+     * @param string $sourceName the source name
      */
-    public function setErrors($errors)
+    public function setSourceName($sourceName)
     {
-        $this->errors = $errors;
+        $this->sourceName = $sourceName;
     }
 
     /**
-     * Returns the error array
+     * Returns the not found source name
      *
-     * @return array
+     * @return string
      */
-    public function getErrors()
+    public function getSourceName()
     {
-        return $this->errors;
+        return $this->sourceName;
     }
 }

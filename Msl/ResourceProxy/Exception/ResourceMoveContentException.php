@@ -17,4 +17,4 @@ namespace Msl\ResourceProxy\Exception;
  * @package   Msl\ResourceProxy\Exception
  * @author    "Marco Spallanzani" <mslib.code@gmail.com>
  */
-class ResourceMoveContentException extends \Exception {}
+class ResourceMoveContentException extends \Exception implements ResourceProxyExceptionInterface {}

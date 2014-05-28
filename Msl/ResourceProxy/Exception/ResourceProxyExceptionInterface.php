@@ -11,10 +11,10 @@
 namespace Msl\ResourceProxy\Exception;
 
 /**
- * Bad Resource configuration exception
+ * General Interface Exception
  *
  * @category  Exception
  * @package   Msl\ResourceProxy\Exception
  * @author    "Marco Spallanzani" <mslib.code@gmail.com>
  */
-class BadResourceConfigurationException extends \Exception implements ResourceProxyExceptionInterface {}
+interface ResourceProxyExceptionInterface {}

@@ -11,13 +11,13 @@
 namespace Msl\ResourceProxy\Exception;
 
 /**
- * Exception thrown when an error occurs after having parsed a given set of resources
+ * Exception thrown when at least an error occurs while processing a list of sources
  *
  * @category  Exception
  * @package   Msl\ResourceProxy\Exception
  * @author    "Marco Spallanzani" <mslib.code@gmail.com>
  */
-class PostParseException extends \Exception implements ResourceProxyExceptionInterface
+class GlobalProcessException extends \Exception implements ResourceProxyExceptionInterface
 {
     /**
      * Error array
