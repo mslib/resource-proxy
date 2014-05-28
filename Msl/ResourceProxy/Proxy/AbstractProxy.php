@@ -10,6 +10,7 @@
 
 namespace Msl\ResourceProxy\Proxy;
 
+use Msl\ResourceProxy\Source\Parse\ParseResult;
 use Msl\ResourceProxy\Source\SourceInterface;
 use Msl\ResourceProxy\Source\SourceFactory;
 use Msl\ResourceProxy\Exception;
@@ -221,13 +222,16 @@ abstract class AbstractProxy
      *
      * @param SourceInterface $source the source object to be processed
      *
-     * @throws \Msl\ResourceProxy\Exception\PostParseUnitException
+     * @throws \Msl\ResourceProxy\Exception\PostParseException
+     *
+     * @return bool
      */
     public function processResourcesBySource(SourceInterface $source)
     {
         // Getting all resources for the given source and process them (save the content in the configured output folder)
         $resources = $source->getContentIterator();
         $globalSuccess = true;
+        $postParseErrors = array();
         foreach ($resources as $resourceKey => $resource) {
             if ($resource instanceof ResourceInterface) {
                 // Moving the content of the current resource to the output folder
@@ -237,27 +241,59 @@ abstract class AbstractProxy
                 }
                 try {
                     // Launching the post parse unit action for the current resource object
-                    $source->postParseUnitAction($resourceKey, $success);
-                } catch (\Exception $e) {
-//TODO save the exception in an array and return/launch a unique exception with all the post parse unit exception
-                    throw new Exception\PostParseUnitException(
-                        sprintf(
-                            "The following exception has been caught after having parsed the source object '%s'. Error is: %s",
+                    $result = $source->postParseUnitAction($resourceKey, $success);
+                    if ($result instanceof ParseResult && $result->getResult() === false) {
+                        $sourcePostParseError = sprintf(
+                            'Post parse error for source \'%s\'. Error message is: \'%s\'.',
                             $source->toString(),
-                            $e->getMessage()
-                        )
+                            $result->getMessage()
+                        );
+                        array_push($postParseErrors, $sourcePostParseError);
+                    }
+                } catch (\Exception $e) {
+                    $sourcePostParseError = sprintf(
+                        'Exception has been caught while parsing the resources for the source object \'%s\'. Error is: \'%s\'',
+                        $source->toString(),
+                        $e->getMessage()
                     );
+                    array_push($postParseErrors, $sourcePostParseError);
                 }
             }
         }
+
         try {
             // Running the global post parse action for the current source object
-            $source->postParseGlobalAction($globalSuccess);
+            $result = $source->postParseGlobalAction($globalSuccess);
+            if ($result instanceof ParseResult && $result->getResult() === false) {
+                $globalSourcePostParseError = sprintf(
+                    'Post global parse error for source \'%s\'. Error message is: \'%s\'.',
+                    $source->toString(),
+                    $result->getMessage()
+                );
+                array_push($postParseErrors, $globalSourcePostParseError);
+            }
         } catch (\Exception $e) {
-//TODO save the exception in an array and return/launch a unique exception with all the post parse unit exception
-            ;
+            $globalSourcePostParseError = sprintf(
+                'Exception has been caught while running the post global action for the source object \'%s\'. Error is: \'%s\'',
+                $source->toString(),
+                $e->getMessage()
+            );
+            array_push($postParseErrors, $globalSourcePostParseError);
         }
-//TODO launch a unique exception with all the post parse unit and post global errors
+
+        // Launch a unique exception with all the post parse unit and post global errors
+        if (count($postParseErrors) > 0) {
+            throw new Exception\PostParseException(
+                $postParseErrors,
+                sprintf(
+                    'Errors while running post unit and global actions for the following source: \'%s\'.',
+                    $source->toString()
+                )
+            );
+        }
+
+        // Return true if no exception
+        return true;
     }
 
     public function processResourcesBySourceName($sourceName)

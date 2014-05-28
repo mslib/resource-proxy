@@ -54,9 +54,9 @@ interface SourceInterface
     /**
      * Action to be run after the resource has been retrieved from the remote source.
      *
-     * @param bool $success
+     * @param bool $success True if all the data have been downloaded and used correctly; false otherwise.
      *
-     * @return mixed
+     * @return \Msl\ResourceProxy\Source\Parse\ParseResult
      */
     public function postParseGlobalAction($success = true);
 
@@ -64,9 +64,9 @@ interface SourceInterface
      * Action to be run after a single set of data retrieved from the remote source has been parsed.
      *
      * @param string $uniqueId Unique id of the single set to be treated (e.g. unique id of a message in a mail box)
-     * @param bool   $success  True if the data has been parsed correctly; false otherwise.
+     * @param bool   $success  True if the data of a given resource have been downloaded and used correctly; false otherwise.
      *
-     * @return mixed
+     * @return \Msl\ResourceProxy\Source\Parse\ParseResult
      */
     public function postParseUnitAction($uniqueId, $success = true);
 

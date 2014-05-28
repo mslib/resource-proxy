@@ -22,14 +22,13 @@ interface ResourceInterface
     /**
      * Initializes a Resource object
      *
-     * @param string $uniqueResourceId  the unique id for the given resource object
-     * @param mixed  $object            the remote resource handler object
-     *
-     * @throws \Exception
+     * @param string $sourceId   the source id for this resource (the source being the remote server in which the resource is allocated)
+     * @param string $resourceId the resource id for the given resource object
+     * @param mixed  $resource   the remote resource handler object (e.g. \Zend\Mail\Storage\Message)
      *
      * @return void
      */
-    public function init($uniqueResourceId, $object);
+    public function init($sourceId, $resourceId, $resource);
 
     /**
      * Saves the current resource to the given path. Returns true if move action was successful; false otherwise.
@@ -47,14 +46,21 @@ interface ResourceInterface
      *
      * @return string
      */
-    public function getUniqueResourceId();
+    public function getResourceId();
 
     /**
-     * Returns the remote resource handler
+     * Returns the remote resource handler: object representation of a resource allocated on a remote server (e.g. an email server, a file server, etc.)
      *
      * @return mixed
      */
     public function getRemoteResourceHandler();
+
+    /**
+     * Returns the unique source id for the given resource object (the source being the remote server in which the resource is allocated)
+     *
+     * @return string
+     */
+    public function getSourceId();
 
     /**
      * Returns a string representation for the resource object (used in the output file name)

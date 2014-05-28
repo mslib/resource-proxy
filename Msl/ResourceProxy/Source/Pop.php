@@ -10,6 +10,7 @@
 
 namespace Msl\ResourceProxy\Source;
 
+use Msl\ResourceProxy\Source\Parse\ParseResult;
 use Zend\Mail\Storage\Pop3 as ZendPop;
 use Zend\Mail\Storage as ZendStorage;
 use Msl\ResourceProxy\Exception;
@@ -149,7 +150,7 @@ class Pop implements SourceInterface
                 // Wrapping the result object into an appropriate ResourceInterface instance
                 try {
                     $popMessage = new PopMessage();
-                    $popMessage->init($i, $message);
+                    $popMessage->init($this->getName(), $i, $message);
                 } catch (\Exception $e) {
                     throw new Exception\SourceGetContentException(
                         sprintf(
@@ -193,28 +194,28 @@ class Pop implements SourceInterface
     /**
      * Action to be run after the resource has been retrieved from the remote source.
      *
-     * @param bool $success
+     * @param bool $success True if all the data have been downloaded and used correctly; false otherwise.
      *
-     * @return mixed
+     * @return \Msl\ResourceProxy\Source\Parse\ParseResult|void
      */
     public function postParseGlobalAction($success = true)
     {
-        // Not needed for the moment
-        return;
+        // Default result
+        return new ParseResult();
     }
 
     /**
      * Action to be run after a single set of data retrieved from the remote source has been parsed.
      *
      * @param string $uniqueId Unique id of the single set to be treated (e.g. unique id of a message in a mail box)
-     * @param bool   $success  True if the data has been parsed correctly; false otherwise.
+     * @param bool   $success  True if the data of a given resource have been downloaded and used correctly; false otherwise.
      *
-     * @return mixed
+     * @return \Msl\ResourceProxy\Source\Parse\ParseResult|void
      */
     public function postParseUnitAction($uniqueId, $success = true)
     {
-        // Not needed for the moment
-        return;
+        // Default result
+        return new ParseResult();
     }
 
     /**
