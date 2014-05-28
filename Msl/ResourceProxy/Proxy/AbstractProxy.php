@@ -212,9 +212,52 @@ abstract class AbstractProxy
     /*********************************************************
      *   P R O C E S S   R E S O U R C E S   M E T H O D S   *
      *********************************************************/
+    /**
+     * Processes all resources associated to the configured source objects for a proxy implementation
+     *
+     * @throws \Msl\ResourceProxy\Exception\GlobalProcessException
+     *
+     * @return void
+     */
     public function processResources()
     {
-//TODO
+        // Fetching the sources iterator
+        $errors = array();
+        foreach($this->sourcesIterator as $source) {
+            // Processing all resources associated to the current source object
+            if ($source instanceof SourceInterface) {
+                try {
+                    $this->processResourcesBySource($source);
+                } catch (Exception\PostParseException $e) {
+                    array_push($errors, $e);
+                } catch (Exception\ResourceProxyExceptionInterface $e) {
+                    $msg = sprintf(
+                        'General proxy error caught for the following source: \'%s\'. Error is: \'%s\'.',
+                        $source->getName(),
+                        $e->getMessage()
+                    );
+                    array_push($errors, $msg);
+                } catch (\Exception $e) {
+                    $msg = sprintf(
+                        'General error caught for the following source: \'%s\'. Error is: \'%s\'.',
+                        $source->getName(),
+                        $e->getMessage()
+                    );
+                    array_push($errors, $msg);
+                }
+            }
+        }
+
+        // If errors, we throw a global process exception
+        if (count($errors) > 0) {
+            throw new Exception\GlobalProcessException(
+                $errors,
+                sprintf(
+                    'Errors while processing the sources for the following proxy: \'%s\'.',
+                    $this->getProxyName()
+                )
+            );
+        }
     }
 
     /**
@@ -222,6 +265,7 @@ abstract class AbstractProxy
      *
      * @param SourceInterface $source the source object to be processed
      *
+     * @throws \Msl\ResourceProxy\Exception\SourceGetDataException
      * @throws \Msl\ResourceProxy\Exception\PostParseException
      *
      * @return bool
@@ -229,7 +273,10 @@ abstract class AbstractProxy
     public function processResourcesBySource(SourceInterface $source)
     {
         // Getting all resources for the given source and process them (save the content in the configured output folder)
-        $resources = $source->getContentIterator();
+        // Getting result iterator
+        $resources = $this->getResources($source);
+
+        // Parsing the resource iterator
         $globalSuccess = true;
         $postParseErrors = array();
         foreach ($resources as $resourceKey => $resource) {
@@ -296,22 +343,46 @@ abstract class AbstractProxy
         return true;
     }
 
+    /**
+     * Processes all resources associated to a Source object for the given source name
+     *
+     * @param string $sourceName the source name to be processed
+     *
+     * @return bool
+     *
+     * @throws \Msl\ResourceProxy\Exception\SourceNotFoundException
+     * @throws \Msl\ResourceProxy\Exception\SourceGetDataException
+     * @throws \Msl\ResourceProxy\Exception\PostParseException
+     */
     public function processResourcesBySourceName($sourceName)
     {
-//TODO
+        // Getting source object
+        $source = $this->getSourceByName($sourceName);
+        if (!$source instanceof SourceInterface) {
+            throw new Exception\SourceNotFoundException(
+                $sourceName,
+                sprintf(
+                    'Impossible to find a source object with the following name: \'%s\'.',
+                    $sourceName
+                )
+            );
+        }
+
+        // Now processing the found source object
+        return $this->processResourcesBySource($source);
     }
 
     /*****************************************************
      *   P A R S E   R E S O U R C E S   M E T H O D S   *
      *****************************************************/
     /**
-     * Returns an Iterator instance containing resource data for the current source object (from the iterator).
+     * Returns an Iterator instance containing all the resources for the current source object (from the source iterator).
      *
      * @throws \Msl\ResourceProxy\Exception\SourceGetDataException
      *
      * @return null|Iterator
      */
-    public function getCurrentSourceData()
+    public function getCurrentResources()
     {
         // Getting the current Source element
         $source = $this->getCurrentSource();
@@ -319,16 +390,7 @@ abstract class AbstractProxy
         // Getting the data
         if ($source instanceof SourceInterface) {
             // Getting result iterator
-            try {
-                return $source->getContentIterator();
-            } catch (\Exception $e) {
-                throw new Exception\SourceGetDataException(
-                    sprintf(
-                        'Exception caught while getting the content for the following source object: %s',
-                        $source->toString()
-                    )
-                );
-            }
+            return $this->getResources($source);
         }
         return null;
     }
@@ -383,7 +445,7 @@ abstract class AbstractProxy
     }
 
     /**
-     * Returns an Iterator instance containing resource data for the given source object
+     * Returns an Iterator containing all the resources for the given source object
      *
      * @param \Msl\ResourceProxy\Source\SourceInterface $source the source object
      *
@@ -391,15 +453,15 @@ abstract class AbstractProxy
      *
      * @return null|Iterator
      */
-    public function getSourceData(SourceInterface $source)
+    public function getResources(SourceInterface $source)
     {
-        // Getting result iterator
+        // Getting resources iterator
         try {
             return $source->getContentIterator();
         } catch (\Exception $e) {
             throw new Exception\SourceGetDataException(
                 sprintf(
-                    'Exception caught while getting the content for the following source object: %s',
+                    'Exception caught while getting the resources for the following source object: %s',
                     $source->toString()
                 )
             );
@@ -407,7 +469,7 @@ abstract class AbstractProxy
     }
 
     /**
-     * Returns an Iterator instance containing resource data for the given source name
+     * Returns an Iterator containing all the resources for the given source name
      *
      * @param string $sourceName the source name
      *
@@ -415,7 +477,7 @@ abstract class AbstractProxy
      *
      * @return null|Iterator
      */
-    public function getSourceDataBySourceName($sourceName)
+    public function getResourcesBySourceName($sourceName)
     {
         // Getting source object first
         $source = $this->getSourceByName($sourceName);
