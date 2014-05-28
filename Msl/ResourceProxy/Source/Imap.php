@@ -23,59 +23,13 @@ use Msl\ResourceProxy\Source\Parse\ParseResult;
  * @package   Msl\ResourceProxy\Source
  * @author    "Marco Spallanzani" <mslib.code@gmail.com>
  */
-class Imap implements SourceInterface
+class Imap extends Email\AbstractAccount
 {
     /**
      * Filter index constants
      */
     const MESSAGES_STATUS_FILTER = 'message_status';
     const FOLDER_FILTER          = 'folder';
-
-    /**
-     * Filter value constants
-     */
-    const UNREAD_ONLY_MESSAGES_FILTER = 'unread_only';
-
-    /**
-     * Cryptographic protocols constants
-     */
-    const SSL_CRYPT_PROTOCOL = 'SSL';
-    const TSL_CRYPT_PROTOCOL = 'TSL';
-
-    /**
-     * The Source Name
-     *
-     * @var string
-     */
-    protected $name;
-
-    /**
-     * The IMAP Zend Storage object
-     *
-     * @var \Zend\Mail\Storage\Imap
-     */
-    protected $imap;
-
-    /**
-     * Message filter flag
-     *
-     * @var bool
-     */
-    protected $unreadOnly = false;
-
-    /**
-     * The folder to be selected
-     *
-     * @var bool
-     */
-    protected $folder;
-
-    /**
-     * The SourceConfig object for this source
-     *
-     * @var SourceConfig
-     */
-    protected $sourceConfig;
 
     /**
      * Sets all the required parameters to configure a given Source instance.
@@ -88,28 +42,8 @@ class Imap implements SourceInterface
      */
     public function setConfig(SourceConfig $sourceConfig)
     {
-        // Setting the source config
-        $this->sourceConfig = $sourceConfig;
-
-        // Setting object fields from configuration
-        $this->name = $sourceConfig->getName();
-
-        // Checking if crypt protocol is accepted
-        $cryptProtocol = $sourceConfig->getCryptProtocol();
-        if (!empty($cryptProtocol)) {
-            if ($cryptProtocol !== self::SSL_CRYPT_PROTOCOL && $cryptProtocol !== self::TSL_CRYPT_PROTOCOL) {
-                throw new Exception\BadSourceConfigurationException(
-                    sprintf(
-                        'Unrecognized cryptographic protocol \'%s\'. Accepted values are:  \'%s\'.',
-                        $cryptProtocol,
-                        self::SSL_CRYPT_PROTOCOL
-                    )
-                );
-            }
-        }
-
-        // Setting FILTERS
-        // Setting message status filter
+        // FILTERS
+        // 1. Setting message status filter
         $filters = $sourceConfig->getFilter();
         if (isset($filters[self::MESSAGES_STATUS_FILTER])) {
             $messageStatus = $filters[self::MESSAGES_STATUS_FILTER];
@@ -117,27 +51,13 @@ class Imap implements SourceInterface
                 $this->unreadOnly = true;
             }
         }
-        // Setting folder filter
+        // 2. Setting folder filter
         if (isset($filters[self::FOLDER_FILTER])) {
             $this->folder = $filters[self::FOLDER_FILTER];
         }
 
-        // Setting zend imap configuration
-        $imapConfig = array(
-            'host'     => $sourceConfig->getHost(),
-            'user'     => $sourceConfig->getUsername(),
-            'port'     => $sourceConfig->getPort(),
-            'password' => $sourceConfig->getPassword()
-        );
-        if (!empty($cryptProtocol)) {
-            $imapConfig['ssl'] = $cryptProtocol;
-        }
-        if (!empty($this->folder)) {
-            $imapConfig['folder'] = $this->folder;
-        }
-
-        // Initializing zend imap instance
-        $this->imap = new ZendImap($imapConfig);
+        // Calling parent method to set the rest of the required configuration
+        parent::setConfig($sourceConfig);
     }
 
     /**
@@ -154,11 +74,11 @@ class Imap implements SourceInterface
         $output = new \ArrayIterator();
 
         // Getting total number of messages
-        $maxMessage = $this->imap->countMessages();
+        $maxMessage = $this->storage->countMessages();
 
         for($i=1; $i<=$maxMessage; $i++) {
             // Getting the message object
-            $message = $this->imap->getMessage($i);
+            $message = $this->storage->getMessage($i);
 
             if ($message instanceof \Zend\Mail\Storage\Message) {
                 // Adding only unread messages to result iterator
@@ -190,40 +110,6 @@ class Imap implements SourceInterface
     }
 
     /**
-     * Returns the name of the current Source instance.
-     *
-     * @return string
-     */
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    /**
-     * Returns the source object (i.e. the object that connects to a remote data source and retrieves resources).
-     * (instance of Zend\Mail\Storage\Imap)
-     *
-     * @return mixed
-     */
-    public function getSourceObject()
-    {
-        return $this->imap;
-    }
-
-    /**
-     * Action to be run after the resource has been retrieved from the remote source.
-     *
-     * @param bool $success True if all the data have been downloaded and used correctly; false otherwise.
-     *
-     * @return \Msl\ResourceProxy\Source\Parse\ParseResult|void
-     */
-    public function postParseGlobalAction($success = true)
-    {
-        // Default result
-        return new ParseResult();
-    }
-
-    /**
      * Action to be run after a single set of data retrieved from the remote source has been parsed.
      *
      * @param string $uniqueId Unique id of the single set to be treated (e.g. unique id of a message in a mail box)
@@ -237,9 +123,9 @@ class Imap implements SourceInterface
         $result = new ParseResult();
         try {
             if ($success) {
-                $this->imap->setFlags($uniqueId, array(ZendStorage::FLAG_SEEN));
+                $this->storage->setFlags($uniqueId, array(ZendStorage::FLAG_SEEN));
             } else {
-                $this->imap->setFlags($uniqueId, array(ZendStorage::FLAG_RECENT));
+                $this->storage->setFlags($uniqueId, array(ZendStorage::FLAG_RECENT));
             }
         } catch (\Exception $e) {
             $result->setResult(false);
@@ -264,5 +150,17 @@ class Imap implements SourceInterface
             $this->sourceConfig->getPort(),
             $this->sourceConfig->getUsername()
         );
+    }
+
+    /**
+     * Returns an instance of a Zend\Mail\Storage\AbstractStorage child class
+     *
+     * @param array $storageConfig the storage config
+     *
+     * @return \Zend\Mail\Storage\AbstractStorage
+     */
+    public function getStorageInstance(array $storageConfig)
+    {
+        return new ZendImap($storageConfig);
     }
 }
